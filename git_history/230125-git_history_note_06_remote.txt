@@ -1,0 +1,40 @@
+230125-git_history_note_remote
+
+/////////////////////////////////////////////////////////////////////
+// git remote add origin github.com/parksay/myRepo
+    //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        / config
+        > [core]
+        >    repositoryformatversion = 0
+        >    filemode = true
+        >    bare = true
+        >    logallreupdates = true
+        >    ignorecase = true
+        >    precomposeunicode = true
+        > [remote "origin"]
+        >    url = github.com/parksay/myRepo
+        >    fetch  = +refs/heads/*:refs/remotes/origin/*
+        > [branch "master"]
+        >   remote = origin
+        >   merge = refs/heads/master
+    //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+// git push origin master
+    //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        / refs/remotes/origin/master
+        >   fafb885246d05e66e~~~e173916
+    //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    > "git push" 했더니 바뀌는 파일이 "refs/remotes/origin/master" 밖에 없음..? (실제로는 log 파일 하나 더 있기는 함. logs/refs/remotes/origin/master )
+    > "refs/remotes/origin/master" 가 가리키는 commit object 를 "local/master" 랑 같도록 업데이트됐음.
+    > 이걸 잘 생각해보면 뭔가 깨달을 수가 있음. 
+    > push 한다면 remote 서버로 업로드하는 작업일 텐데, 왜 내 로컬에서도 변화가 일어나지..?
+    > 그렇다는 건 내 로컬에서도 "remote/origin" 이라는 브랜치가 따로 있는 게 아닐까?
+    > "remote/origin" 이런 거는 내 로컬에 저장된 결국 하나의 브랜치일 뿐. 
+    > "git push" 하면서 remote 서버에 있는 "origin/master" 도 최신 걸로 업데이트 될 것이니, 내 로컬에 저장된 "origin/master" 도 HEAD 를 최신 커밋으로 업데이트 하자. remote 서버의 정보랑, 내 로컬의 정보랑 동기화 해놔야지~ 이거잖아.
+    > remote 든 local 이든 branch 에서 head 파일들은 그냥 각자 어떤 commit object 를 가리키고 있었을 뿐이야.
+    > remote 라고 해서 별로 다를 게 없었음. 마치 하나의 branch 처럼 작동함. 단, "origin" 이라는 branch 영역이 따로 관리되는 느낌. 즉, 쌍둥이 나무가 옆에 또 있고, 그 나무의 branch 인 느낌. 내 branch 가 아니라.
+    > "git fetch" 실행하면 내 "origin/master" 라는 브랜치의 head 파일이 가리키던 commit object 가 바뀔 뿐. 단, commit object + tree object + blob object 를 다 remote 서버에서 다운로드해서 받아올 뿐. 내가 로컬에서 직접 생성하는 게 아니라.
+    > "git fetch" "refs/remotes/origin/master" 만 바꿀 뿐, "index" 나 "local/master" 는 건드리지 않음. (commit object / tree object / blob object / FETCH_HEAD / logs 파일) 이 생성됨.
+    > "git pull" 이라는 명령어는? 그러면 remote 에 있던 "origin/master" 브랜치를 내 로컬로 다운로드하고, 그 브랜치를 내 "local/master" 랑 merge 까지하는 작업일 뿐.
+    > +) "git pull" 하기 전에도 index 정보는 "ORIG_HEAD" 에 저장됨. 되돌리고 싶을 때 사용하기

@@ -1,0 +1,85 @@
+230125-git_history_note_directory
+
+
+// working directory
+    ( = working tree )
+    ( = working copy )
+    > 그냥 내 로컬 디렉토리. 원본 파일.
+
+// index
+    ( = staging area )
+    ( = cache )
+    > .git 안에 "index" 파일 안에 있는 tree 정보. 파일에 맵핑되어 있는 blob object id 의 내용
+
+// repository
+    ( = history )
+    ( = tree )
+    > 해당 branch 의 > head 파일이 가리키는 > commit object 안의 > tree object 가 가리키는 > blob object 의 내용
+
+
+// working directory        |       index       |       repository      |
+=========================================================================
+                                                <<<-------------->> "git reset --soft"
+                            <<<---------------------------------->> "git reset --mixed"
+<<<-------------------------------------------------------------->> "git reset --hard"
+
+
+
+// 내가 예를 들어서 아래 커맨드를 실행했다고 해보자.
+// git add myFile1.txt
+// git commit -m "first commit"
+    / 여기서 "myFile1.txt" 안의 내용은 "repository"
+    / 그러면 내가 원본 파일을 수정하면서 working directory 에 있는 파일의 내용이 "repository" 로 바꼈겠지.
+    / 이어서 "git add myFile1.txt" 명령문을 수행하면서, "index" 파일 안에서 "myFile1.txt" 에 맵핑되어 있는 blob object 의 id 도 바꼈겠지.
+        (물론 add 하면서 현재 "myFile1.txt" 의 내용을 "repository" 로 저장한 blob object 도 하나 만들어졌겠지.)
+    / 이어서 "git commit" 하면서 명령문을 수행하면서 "master" 브랜치의 "head" 이 가리키는 commit object 의 id 도 바꼈을 거고, 
+    그 commit object 가 가리키는 tree object 도 바꼈을 거고, 
+    그 tree object 안에서 "myFile1.txt" 에 맵핑되어 있는 blob object 의 id 도 바꼈겠지. 
+    ( 여기서 맵핑되어 있는 blob object 의 id 는 아까 파일 내용을 "repository" 로 저장한 blob obejct 와 같은 id 겠지.)
+    / 따라서 (working directory + staging area + repository) 세 영역이 가리키는 "myFile1.txt" 의 내용이 모두 "repository" 로 같음.
+
+// git add myFile1.txt
+    / 이번에 "myFile1.txt" 안의 내용은 "index"
+    / 그러면 내가 원본 파일을 수정하면서 working directory 에 있는 파일이 내용이 "index" 로 바꼈겠지.
+    / 이어서 "git add myFile1.txt" 명령문을 수행하면서, 바뀐 "myFile1.txt" 의 내용("index")을 저장한 blob object 가 먼저 만들어지고,
+     "index" 파일 안에서 "myFile1.txt" 에 맵핑되어 있는 blob object 의 id 가 아까 만들어진 blob obejct 의 id 로 갱신됨.
+    / 결과적으로 (working directory + staging area ) 에서는 파일 내용이 "index" 로 되어 있고,
+        repository 에서는 아직 commit 을 하지 않았으므로 여전히 파일 내용이 "repository" 임.
+    
+// myFile1.txt 내용을 "working directory" 로 수정
+    / add 도 하지 않고 commit 도 하지 않았으므로 .git 에서는 어떤 변화도 일어나지 않음.
+    / 다만 내 로컬에서만 내용이 "working directory" 로 수정된 상태.
+    / 따라서 repository 에서는 내용이 "repository", staging area 에서는 내용이 "index", working directory 에서는 내용이 "working directory" 가 된 상태.
+
+
+// git reset --soft 65d9cdd783197f6~~~~077e99d
+    / 자 이제부터가 중요. 
+    / "git reset --soft" 를 하면서 branch 의 head 파일이 가리키는 commit object 를 바꿨을 것.
+    / 그리고 나머지는 건드리지 않음.
+    / 나머지란, index 파일에 저장된 파일 <-> blob object 맵핑도 바뀌지 않았고, 내가 로컬에서 수정해뒀던 원본 파일  "myFile1.txt" 도 바뀌지 않았음.
+    / ( "git diff" 해보면 내 working directory 내용이랑 index 랑 비교할 수 있음 ) indeX
+    / 이제 branch 의 head 파일이 가리키는 commit obejct 가 가리키는 tree object 안을 열어 보면 "myFile1.txt" 가 맵핑되어 있는 blob obejct 의 내용은 "inital" 일 것. (가장 최초에 커밋할 때 내용.)
+    / staging area 가 가리키는 파일의 내용은 "index" , 내 로컬 working directory 의 원본 파일의 내용은 "working directory" 일 것.
+
+// git reset --soft ORIG_HEAD
+    / 자 다시 되돌렸어. reset 같은 위험한 명령문을 실행하기 전에는 ORIG_HEAD 에 저장해둔다고 했지.
+    / 이제 다시 repository 에서는 내용이 "repository", 
+    staging area 에서는 내용이 "index", 
+    working directory 에서는 내용이 "working directory" 가 된 상태.
+
+// git reset --mixed 65d9cdd783197f6~~~~077e99d
+    / 이러면 어떻게 되는가? 어디부터 어디까지 되돌리는가?
+    / branch 의 head 파일이 가리키고 있는 commit object 안을 보면 tree object 가 있는데 그 tree object 의 snapshot 에 따라서 "myFile1.txt" 와 맵핑된 blob object 의 내용이 "init" 으로 바뀜. 이건 "git reset --soft" 로 해도 똑같지.
+    / 그리고 index 에서 "myFile1.txt" 와 맵핑되어 있는 blob object 의 내용도 "init" 으로 바뀜.
+    / "git diff" 해보니까 index 가 "init", 내 로컬의 원본 파일의 내용이 "working directory"
+
+// 다시 되돌리고
+    / git reset --hard 65d9cdd783197f6~~~~077e99d
+    / 해버리면?
+    / 보나 마나, branch 의 head, index, working directory 모두 내용이 "init" 이 되겠지.
+    
+
+
+// "git reset --soft" 는 branch 의 head 파일만 바꾸는 거고,
+    "git reset --mixed" 는 (branch 의 head 파일 + index 파일) 을 바꾸는 거고
+    "git reset --hard" 는 (branch 의 head 파일 + index 파일 + 내 로컬의 원본 파일) 을 바꾸는 것.

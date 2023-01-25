@@ -1,0 +1,88 @@
+230124-git_history_note_rollback
+
+/////////////////////////////////////////////////////////////////////
+// git commit -m "first commit"
+// git commit -am "second commit"
+// git commit -am "third commit"
+// git commit -am "fourth commit"
+    //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    / git log --oneline
+    /commit f3ea131309f0827~~~a4dbf8c   >   "fourth commit"
+    /commit 93c95176cdaef61~~~ce11d0b   >   "third commit"
+    /commit 7a240f79a77359a~~~4f5f529   >   "second commit"
+    /commit 79c1a0d4d1281b0~~~98969ac   >   "first commit"
+    //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+// git reset --hard 93c95176cdaef61~~~ce11d0b
+    > 93c95176cdaef61~~~ce11d0b 라는 id 를 가진 commit 으로 reset 해보았다.
+    //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        / refs/heads/master
+            > 93c95176cdaef61~~~ce11d0b
+    //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        / objects/93/c95176cdaef61~~~ce11d0b
+            > tree 77aa31a93565e0c~~~c7df624
+            > parent 7a240f79a77359a~~~4f5f529
+            > author egoing <egoing@gmail.com> 1487297421 +0900
+            > committer egoing <egoing@gmail.com> 1487297421 +0900
+            > third commit
+    //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    > git reset --hard 93c95176cdaef61~~~ce11d0b
+    > reset 한다는 것은 결국 "refs/heads/" 디렉토리 안에 있는 "master" 파일이 가리키는 최신 커밋 object id 를 "93c95176cdaef61~~~ce11d0b" 로 바꾸겠다는 뜻.
+
+// 그럼 원래 "fourth commit" 이었던 "f3ea131309f0827~~~a4dbf8c" 는 지워진 걸까?
+    / git reset --hard 하면서 사라진 걸까?
+    / git log 에는 나오지 않는데 그럼 삭제한 건가?
+    / "ORIG_HEAD" 파일이나 "logs/refs/heads/master"
+    / 첫째, ORIG_HEAD
+    //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        > 5d09b955413a63f293a8500d0f0220ac8b2038f8 
+        > 0175b1b8112c365701877ebba63215bb3f130973 
+        > parksay_desktop <hellobigworld.parksay@gmail.com> 
+        > 1674462269 +0900	
+        > commit: 230123-second commit
+    //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        > 보면 딱 알겠지.
+        > 첫째 줄, 원래 있었던 commit id
+        > 둘째 줄, 바뀐 commit id
+        > 셋째 줄, user info
+        > 넷째 줄, time info
+        > 다섯째 줄, command info
+        > git 에서는 어떤 위험한 명령문을 실행하기 전에 현재 "HEAD" 의 정보를 이 "ORIG_HEAD" 에 미리 저장해두고 명령문을 실행함. 약간 backup 이라고 생각하면 됨.
+        > 이 "ORIG_HEAD" 를 이용해서 reset --hard 했던 명령문을 되돌리 수 있음. 
+        > git reset --hard ORIG_HEAD
+        > 이전에 "git reset --hard 93c95176cdaef61~~~ce11d0b" 명령문을 실행하기 바로 직전의 그 "HEAD" 파일을 먼저 "ORIG_HEAD" 에 저장해 두고, 그 다음에 "HEAD" 를 수정함.
+        > 그러니까 "ORIG_HEAD" 에는 "HEAD" 의 바로 이전 상태가 담겨 있겠지.
+        > "git reset --hard ORIG_HEAD" 를 하면 "HEAD" 를 이전의 상태로 되돌리겠다고.
+
+    / 둘째, logs/refs/heads/master
+        > 얘는 까보면 "ORIG_HEAD" 파일 같은 애들이 여러 개 들어 있음.
+        > 뭐 명령문 할 때마다 직전에 "HEAD" 내용을 다 기록해 둠.
+        > 그럼 뭔가 이 log 를 참고해야 할 일이 생기면 이 파일 까야 하나?
+        > 귀찮잖아. 명령문이 있음
+        > git reflog
+        //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+            93e1b1e HEAD@{0}: commit: 230123-third commit
+            0175b1b HEAD@{1}: commit: 230123-second commit
+            5d09b95 HEAD@{2}: commit (initial): 230123-first commit
+        //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        > 이런 느낌이 되는데, 뭐 되돌리고 싶거나 커밋을 지정하고 싶으면 그냥 그 맨앞에 붙어 있는 "HEAD@{2}" 이거 그냥 그대로 가져다가 사용해도 됨.
+
+
+/////////////////////////////////////////////////////////////////////
+// git checkout 93c95176cdaef61~~~ce11d0b 
+    / 아니 checkout 하려면 "git checkout master" / "git checkout exp" 처럼 branch 이름을 써야지.
+    / 이렇게 직접 commit id 를 적어 버리면 어떻게 되는 거지?
+    //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        / HEAD
+            > ref: refs/heads/master
+    ----------------------------------------------------
+        / HEAD
+            > 93c95176cdaef61~~~ce11d0b
+    //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    > 뭐가 바꼈냐면, "HEAD" 파일이 바뀜.
+    > 원래는 "ref: refs/heads/master" 이렇게 해서 간접적으로, 먼저 branch 를 가리키고, 그 branch 의 head 파일이 가리키는 commit id 를 최종적으로 가리키게끔 했었지.
+    > 그런데 이제는 "ref: refs/heads/master" 가 아니라 "93c95176cdaef61~~~ce11d0b" 이런 식으로 branch 를 거치지 않고 직접 commit id 를 가리키고 있어.
+// git branch
+    / 보면 branch 가 따로 있는 게 아니라서 "detached" 라는 수식어? 가 붙어 있지.
+    / 다시 checkout master 하면 됨.

@@ -1,0 +1,67 @@
+230125-git_history_note_conflict
+
+
+/////////////////////////////////////////////////////////////////////
+// git checkout master
+// git merge exp
+    //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        / index
+            > 100644 e541a4178e6603b24d~~~cedc587 1 myFile1.txt
+            > 100644 4fdcca5027e1aea348~~~7d197fe 2 myFile1.txt
+            > 100644 2093f38880ed7601e4~~~62b784b 3 myFile1.txt
+    //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        / objects/e5/41a4178e6603b24d~~~cedc587
+            > function() { return 'common';}
+        / objects/4f/dcca5027e1aea348~~~7d197fe
+            > function() { return 'master';}
+        / objects/20/93f38880ed7601e4~~~62b784b
+            > function() { return 'exp';}
+        / objects/85/e2a1f9cfb757b7d7~~~7ada947
+            > function() { 
+                <<<<<<<< HEAD 
+                    return 'master'; 
+                ======== 
+                    return 'exp'; 
+                >>>>>>>> exp
+              }
+    //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    > 내가 master 에 들어가서 exp 를 merge 하는 중에 myFile1.txt 에서 충돌이 났어.
+    > index 파일 봐 봐. 앞에 숫자가 붙었어. 지금까지는 0이었는데, 이번에는 1/2/3 이런 게 붙었지. 그리고 맵핑 파일은 myFile1.txt 하나인데, 맵핑되어 있는 blob object 들의 id 는 각각 달라.
+    > 여기서 1/2/3 은 총 세 개의 commit 을 나타냄.
+        o - master
+        |   o - exp
+        |  /
+        | /
+        o - common
+    > 이렇게 총 3개의 커밋이 관련된 상태에서 merge 하려고 했던 거지.
+    > 열어 보니까 어때.
+    > 1은 원래 있던 거. 공통의 commit. 2는 현재 checkout 한 branch. 3은 이제 들여오려고 했던 branch.
+    > 그러면서 충돌난 파일을 이러지도 저러지도 못하니까 일단 blob object 를 새로 하나 만들어 놓고 "objects/85/e2a1f9cfb757b7d7~~~7ada947" 
+        working directory 파일을 object 로 수정해놓은 다음에 사용자한테는 그걸 보여줌. 이렇게 충돌 났다고.
+
+// git add myFile1.txt
+    > 하면 충돌 해결됨.
+// git commit -m "resolved conflict"
+    > 하면 merge commit 까지 완료
+
+
+// 3-way merge 에 대해서 알아보자
+
+    / 2-way merge
+    |   Me  |   You     |   merge result
+    ====================================
+    |   A   |           |   !!conflict!!
+    |   B   |   B       |   B
+    |   1   |   2       |   !!conflict!!
+    |       |   D       |   !!conflict!!
+
+    / 3-way merge
+    |   Me  |   Base    |   You     |   merge result
+    ================================================
+    |   A   |    A      |           |                   > 원래 A 였고, Me 는 A 를 그대로 뒀고, You 는 A 를 수정했어. 그럼 You 를 따라가자.
+    |   B   |    B      |   B       |   B               > 원래 B 였고, Me 는 B 를 그대로 뒀고, You 도 B 를 그대로 뒀어. 그럼 B 를 그대로 두자.
+    |   1   |    C      |   2       |   !!conflict!!    > 원래 C 였고, Me 는 C 를 1로 수정했고, You 는 C 를 2로 수정했어. 어느 쪽이 맞는 거..? conflict 내버림.
+    |       |    D      |   D       |                   > 원래 D 였고, Me 는 D 를 수정했고, You 는 D 를 그대로 뒀어. 그럼 Me 를 따라가자.
+    
